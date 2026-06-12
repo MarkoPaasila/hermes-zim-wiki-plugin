@@ -2,7 +2,7 @@
 
 Hermes Agent plugin for reading and writing [Zim Desktop Wiki](https://zim-wiki.org/) notebooks via the **Zim Python API**.
 
-**Version:** `2026.06.13.1` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
+**Version:** `2026.06.13.2` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Goal
 
@@ -41,12 +41,12 @@ export ZIM_NOTEBOOK_PATH=/path/to/your/notebook
 
 ### Hermes CLI or dashboard (recommended)
 
-Install from GitHub with Hermes built-in plugin manager. The plugin lives in the `hermes_zim_wiki_plugin/` subdirectory of this repo, so include that path in the identifier.
+Install from GitHub with Hermes built-in plugin manager. The repo root is the plugin directory (`plugin.yaml` and `__init__.py` at the top level), so Hermes keeps the full git checkout and `hermes plugins update` works.
 
 **CLI:**
 
 ```bash
-hermes plugins install MarkoPaasila/hermes-zim-wiki-plugin/hermes_zim_wiki_plugin --enable
+hermes plugins install MarkoPaasila/hermes-zim-wiki-plugin --enable
 ```
 
 Hermes clones the repo, prompts for `ZIM_NOTEBOOK_PATH` if it is not already set (saved to `~/.hermes/.env`), and enables the plugin. Update later with:
@@ -60,7 +60,7 @@ hermes plugins update zim-wiki
 1. Start the web UI: `hermes dashboard` (requires `pip install 'hermes-agent[web]'`).
 2. Open **Plugins** in the sidebar.
 3. Under **Install from GitHub / Git URL**, paste:
-   `MarkoPaasila/hermes-zim-wiki-plugin/hermes_zim_wiki_plugin`
+   `MarkoPaasila/hermes-zim-wiki-plugin`
 4. Leave **Enable after install** on and click **Install**.
 5. If the dashboard reports missing env vars, set `ZIM_NOTEBOOK_PATH` on the **Keys** page.
 
@@ -69,13 +69,13 @@ See [Hermes plugins](https://hermes-agent.nousresearch.com/docs/user-guide/featu
 ### Symlink (development)
 
 ```bash
-ln -s "$(pwd)/hermes_zim_wiki_plugin" ~/.hermes/plugins/zim-wiki
+ln -s "$(pwd)" ~/.hermes/plugins/zim-wiki
 hermes plugins enable zim-wiki
 ```
 
 ### Rsync (local)
 
-Copy the plugin into your Hermes plugins directory (useful when you want a real copy instead of a symlink). Sync only the `hermes_zim_wiki_plugin/` tree — not repo docs, tests, or build output — and skip Python cache files:
+Copy the plugin into your Hermes plugins directory (flat layout for manual deploy — no repo docs or tests). Skip Python cache files:
 
 ```bash
 mkdir -p ~/.hermes/plugins/zim-wiki
@@ -86,10 +86,11 @@ rsync -av --delete \
   --exclude '.mypy_cache/' \
   --exclude '.ruff_cache/' \
   hermes_zim_wiki_plugin/ ~/.hermes/plugins/zim-wiki/
+cp plugin.yaml ~/.hermes/plugins/zim-wiki/
 hermes plugins enable zim-wiki
 ```
 
-Re-run the `rsync` command after pulling updates. The trailing `/` on the source path copies the *contents* of `hermes_zim_wiki_plugin/` into `zim-wiki/` (where `plugin.yaml` lives at the top level). The same excludes are used in [`scripts/build-plugin.sh`](scripts/build-plugin.sh) when building the directory tarball.
+Re-run after pulling updates. The same layout is used in [`scripts/build-plugin.sh`](scripts/build-plugin.sh) for the directory tarball.
 
 ### Rsync (remote)
 
@@ -105,6 +106,7 @@ rsync -av --delete \
   --exclude '.mypy_cache/' \
   --exclude '.ruff_cache/' \
   hermes_zim_wiki_plugin/ "$REMOTE:~/.hermes/plugins/zim-wiki/"
+rsync -av plugin.yaml "$REMOTE:~/.hermes/plugins/zim-wiki/"
 ssh "$REMOTE" 'hermes plugins enable zim-wiki'
 ```
 
@@ -123,7 +125,7 @@ Zim itself must still be installed on the system; pip only installs this plugin.
 
 ```bash
 mkdir -p .hermes/plugins
-ln -s "$(pwd)/hermes_zim_wiki_plugin" .hermes/plugins/zim-wiki
+ln -s "$(pwd)" .hermes/plugins/zim-wiki
 ```
 
 ## Test
@@ -143,8 +145,9 @@ pytest
 ## Layout
 
 ```
-hermes_zim_wiki_plugin/
-├── plugin.yaml
+plugin.yaml               # Hermes manifest (repo root — git install)
+__init__.py               # register(ctx) shim for git install
+hermes_zim_wiki_plugin/   # implementation package
 ├── __init__.py           # register(ctx)
 ├── schemas.py
 ├── tools.py

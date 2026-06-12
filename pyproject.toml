@@ -25,7 +25,7 @@ where = ["."]
 include = ["hermes_zim_wiki_plugin*"]
 
 [tool.setuptools.package-data]
-hermes_zim_wiki_plugin = ["plugin.yaml", "skills/**/*"]
+hermes_zim_wiki_plugin = ["skills/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

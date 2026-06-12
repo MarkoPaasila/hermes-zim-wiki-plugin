@@ -17,7 +17,7 @@ def test_version_format():
 
 
 def test_plugin_yaml_version_matches():
-    manifest = Path(__file__).resolve().parents[1] / "hermes_zim_wiki_plugin" / "plugin.yaml"
+    manifest = Path(__file__).resolve().parents[1] / "plugin.yaml"
     text = manifest.read_text(encoding="utf-8")
     match = re.search(r"^version:\s*(\S+)\s*$", text, re.MULTILINE)
     assert match is not None

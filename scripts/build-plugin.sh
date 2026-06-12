@@ -56,7 +56,7 @@ VERSION="$("$PYTHON" -c 'from hermes_zim_wiki_plugin import __version__; print(_
 PLUGIN_NAME="$("$PYTHON" -c "
 import re
 from pathlib import Path
-text = Path('hermes_zim_wiki_plugin/plugin.yaml').read_text(encoding='utf-8')
+text = Path('plugin.yaml').read_text(encoding='utf-8')
 match = re.search(r'^name:\\s*(\\S+)\\s*$', text, re.MULTILINE)
 if not match:
     raise SystemExit('plugin.yaml: missing name field')
@@ -78,7 +78,7 @@ parts = __version__.split(".")
 if len(parts) != 4 or not all(p.isdigit() for p in parts):
     sys.exit(f"Invalid __version__ format: {__version__!r}")
 
-manifest = Path("hermes_zim_wiki_plugin/plugin.yaml").read_text(encoding="utf-8")
+manifest = Path("plugin.yaml").read_text(encoding="utf-8")
 match = re.search(r"^version:\s*(\S+)\s*$", manifest, re.MULTILINE)
 if match is None:
     sys.exit("plugin.yaml: missing version field")
@@ -124,6 +124,7 @@ if [[ "$PIP_ONLY" -eq 0 ]]; then
         --exclude '__pycache__/' \
         --exclude '*.py[cod]' \
         hermes_zim_wiki_plugin/ "$STAGING/$PLUGIN_NAME/"
+    cp plugin.yaml "$STAGING/$PLUGIN_NAME/"
 
     DIR_TARBALL="dist/${PLUGIN_NAME}-${VERSION}.tar.gz"
     tar -C "$STAGING" -czf "$DIR_TARBALL" "$PLUGIN_NAME"

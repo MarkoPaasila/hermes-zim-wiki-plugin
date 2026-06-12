@@ -30,7 +30,7 @@ Canonical value: [`hermes_zim_wiki_plugin/_version.py`](hermes_zim_wiki_plugin/_
 
 Also update these when releasing (must match):
 
-- [`hermes_zim_wiki_plugin/plugin.yaml`](hermes_zim_wiki_plugin/plugin.yaml) — Hermes plugin manifest
+- [`plugin.yaml`](plugin.yaml) — Hermes plugin manifest
 - [`pyproject.toml`](pyproject.toml) — reads `__version__` dynamically at build time
 
 After changing the version, run tests and verify with:

@@ -2,7 +2,7 @@
 
 Hermes Agent plugin for reading and writing [Zim Desktop Wiki](https://zim-wiki.org/) notebooks via the **Zim Python API**.
 
-**Version:** `2026.06.13.2` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
+**Version:** `2026.06.13.3` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Goal
 

@@ -5,6 +5,12 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.13.3] - 2026-06-13
+
+### Fixed
+
+- `/zim` reported "Unknown command" when Hermes loaded the plugin as a directory checkout (slash worker cwd, no pip entry point): root `__init__.py` now adds the repo root to `sys.path` before importing `hermes_zim_wiki_plugin`
+
 ## [2026.06.13.2] - 2026-06-13
 
 ### Fixed
@@ -58,6 +64,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.13.3]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.3
 [2026.06.13.2]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.2
 [2026.06.13.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.1
 [2026.06.13.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.0

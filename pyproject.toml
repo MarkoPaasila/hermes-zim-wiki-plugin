@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes-zim-wiki-plugin"
+dynamic = ["version"]
+description = "Hermes Agent plugin for Zim Desktop Wiki notebooks (Zim API backend)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-2.0-only" }
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.entry-points."hermes_agent.plugins"]
+zim-wiki = "hermes_zim_wiki_plugin"
+
+[tool.setuptools.dynamic]
+version = { attr = "hermes_zim_wiki_plugin.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hermes_zim_wiki_plugin*"]
+
+[tool.setuptools.package-data]
+hermes_zim_wiki_plugin = ["plugin.yaml", "skills/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

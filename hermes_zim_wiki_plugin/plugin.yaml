@@ -1,0 +1,17 @@
+name: zim-wiki
+version: 2026.06.13.0
+description: >-
+  Non-LLM tools for querying, searching, reading, and correctly writing Zim
+  Desktop Wiki notebooks via the Zim Python API
+author: marko
+requires_env:
+  - name: ZIM_NOTEBOOK_PATH
+    description: "Absolute path to the root directory of a Zim notebook"
+provides_tools:
+  - zim_list_pages
+  - zim_read_page
+  - zim_search
+  - zim_write_page
+  - zim_get_links
+  - zim_list_tags
+  - zim_create_page

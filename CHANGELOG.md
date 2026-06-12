@@ -32,6 +32,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 ### Documentation
 
 - README with prerequisites (system Zim install, `ZIM_NOTEBOOK_PATH`), install paths, and tool overview
+- README rsync install instructions for local and remote deployment
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
 [2026.06.13.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.0

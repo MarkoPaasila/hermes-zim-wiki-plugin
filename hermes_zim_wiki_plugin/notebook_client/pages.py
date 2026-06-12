@@ -1,6 +1,6 @@
 """Page list, read, write, and create via Zim API."""
 
-from .session import NotebookError, get_notebook, path_to_dict, record_to_dict, resolve_path
+from .session import NotebookError, get_notebook, path_to_dict, record_to_dict, resolve_path, run_zim_op
 
 
 def _wiki_body(page) -> str:
@@ -14,7 +14,7 @@ def _ensure_loaded(zim_page) -> None:
         zim_page.get_parsetree()
 
 
-def list_pages(prefix: str = "") -> list[dict]:
+def _list_pages(prefix: str = "") -> list[dict]:
     notebook = get_notebook()
     start = None
     if prefix.strip():
@@ -27,7 +27,11 @@ def list_pages(prefix: str = "") -> list[dict]:
     return pages
 
 
-def read_page(page: str) -> dict:
+def list_pages(prefix: str = "") -> list[dict]:
+    return run_zim_op("list_pages", _list_pages, prefix=prefix)
+
+
+def _read_page(page: str) -> dict:
     notebook = get_notebook()
     path = resolve_path(page)
     zim_page = notebook.get_page(path)
@@ -40,7 +44,11 @@ def read_page(page: str) -> dict:
     return data
 
 
-def write_page_body(page: str, body: str) -> dict:
+def read_page(page: str) -> dict:
+    return run_zim_op("read_page", _read_page, page=page)
+
+
+def _write_page_body(page: str, body: str) -> dict:
     from zim.notebook import NotebookState
 
     notebook = get_notebook()
@@ -63,7 +71,11 @@ def write_page_body(page: str, body: str) -> dict:
     }
 
 
-def create_page(page: str, body: str, append: bool = False) -> dict:
+def write_page_body(page: str, body: str) -> dict:
+    return run_zim_op("write_page_body", _write_page_body, page=page, body=body)
+
+
+def _create_page(page: str, body: str, append: bool = False) -> dict:
     from zim.notebook import NotebookState
 
     notebook = get_notebook()
@@ -87,3 +99,7 @@ def create_page(page: str, body: str, append: bool = False) -> dict:
         "appended": append and existed_before,
         "bytes_written": len(body.encode("utf-8")),
     }
+
+
+def create_page(page: str, body: str, append: bool = False) -> dict:
+    return run_zim_op("create_page", _create_page, page=page, body=body, append=append)

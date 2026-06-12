@@ -1,9 +1,9 @@
 """Tag queries via Zim index."""
 
-from .session import NotebookError, get_notebook, record_to_dict, resolve_path
+from .session import NotebookError, get_notebook, record_to_dict, resolve_path, run_zim_op
 
 
-def list_tags_on_page(page: str) -> list[dict]:
+def _list_tags_on_page(page: str) -> list[dict]:
     notebook = get_notebook()
     path = resolve_path(page)
     try:
@@ -12,14 +12,22 @@ def list_tags_on_page(page: str) -> list[dict]:
         raise NotebookError(f"Failed to list tags on page: {exc}") from exc
 
 
-def list_all_tags() -> list[dict]:
+def list_tags_on_page(page: str) -> list[dict]:
+    return run_zim_op("list_tags_on_page", _list_tags_on_page, page=page)
+
+
+def _list_all_tags() -> list[dict]:
     notebook = get_notebook()
     tags = [{"name": tag.name} for tag in notebook.tags.list_all_tags()]
     tags.sort(key=lambda t: t["name"].lower())
     return tags
 
 
-def list_pages_by_tag(tag: str) -> list[dict]:
+def list_all_tags() -> list[dict]:
+    return run_zim_op("list_all_tags", _list_all_tags)
+
+
+def _list_pages_by_tag(tag: str) -> list[dict]:
     if not tag.strip():
         raise NotebookError("Tag name is empty")
     notebook = get_notebook()
@@ -28,3 +36,7 @@ def list_pages_by_tag(tag: str) -> list[dict]:
         return [record_to_dict(rec) for rec in notebook.tags.list_pages(tag_name)]
     except Exception as exc:
         raise NotebookError(f"Failed to list pages for tag: {exc}") from exc
+
+
+def list_pages_by_tag(tag: str) -> list[dict]:
+    return run_zim_op("list_pages_by_tag", _list_pages_by_tag, tag=tag)

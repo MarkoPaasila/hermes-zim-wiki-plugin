@@ -7,6 +7,7 @@ from pathlib import Path
 from . import schemas, tools
 from ._version import __version__
 from .notebook_client import is_zim_available
+from .notebook_client.session import zim_unavailable_message
 
 __all__ = ["register", "__version__"]
 
@@ -24,10 +25,7 @@ def _handle_status(raw_args: str) -> str:
     if not path:
         return "ZIM_NOTEBOOK_PATH is not set."
     if not is_zim_available():
-        return (
-            "Zim Desktop Wiki Python API is not available. "
-            "Install Zim (e.g. pacman -S zim)."
-        )
+        return zim_unavailable_message()
     try:
         result = tools.zim_list_pages({})
         data = __import__("json").loads(result)

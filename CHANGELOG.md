@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.13.1] - 2026-06-13
+
+### Fixed
+
+- Zim API unavailable when Hermes runs on a different Python than the system Zim package (e.g. Hermes 3.11 vs Arch Zim on 3.14): notebook operations now fall back to a discovered Zim-capable interpreter via `zim_worker.py`
+- `/zim` status and tool errors now report the active Python interpreter, import error, and optional `ZIM_PYTHON` override instead of a generic install hint
+
 ## [2026.06.13.0] - 2026-06-13
 
 ### Added
@@ -40,4 +47,5 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.13.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.1
 [2026.06.13.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.0

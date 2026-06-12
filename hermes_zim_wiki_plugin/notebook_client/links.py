@@ -1,9 +1,9 @@
 """Page link queries via Zim index."""
 
-from .session import NotebookError, get_notebook, resolve_path
+from .session import NotebookError, get_notebook, resolve_path, run_zim_op
 
 
-def get_links(page: str, direction: str = "both") -> list[dict]:
+def _get_links(page: str, direction: str = "both") -> list[dict]:
     from zim.notebook import LINK_DIR_BACKWARD, LINK_DIR_BOTH, LINK_DIR_FORWARD
 
     dir_map = {
@@ -33,3 +33,7 @@ def get_links(page: str, direction: str = "both") -> list[dict]:
 
     links.sort(key=lambda item: (item["source"], item["target"]))
     return links
+
+
+def get_links(page: str, direction: str = "both") -> list[dict]:
+    return run_zim_op("get_links", _get_links, page=page, direction=direction)

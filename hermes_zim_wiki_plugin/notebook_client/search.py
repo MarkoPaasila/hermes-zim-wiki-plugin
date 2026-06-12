@@ -1,6 +1,6 @@
 """Notebook search via Zim Query / SearchSelection API."""
 
-from .session import NotebookError, get_notebook, path_to_dict
+from .session import NotebookError, get_notebook, path_to_dict, run_zim_op
 
 
 def _snippet_for_path(notebook, path, query: str) -> str | None:
@@ -21,7 +21,7 @@ def _snippet_for_path(notebook, path, query: str) -> str | None:
         return None
 
 
-def search_pages(query: str, limit: int = 20) -> list[dict]:
+def _search_pages(query: str, limit: int = 20) -> list[dict]:
     if not query.strip():
         raise NotebookError("Search query is empty")
 
@@ -50,3 +50,7 @@ def search_pages(query: str, limit: int = 20) -> list[dict]:
             entry["snippet"] = snippet
         results.append(entry)
     return results
+
+
+def search_pages(query: str, limit: int = 20) -> list[dict]:
+    return run_zim_op("search_pages", _search_pages, query=query, limit=limit)

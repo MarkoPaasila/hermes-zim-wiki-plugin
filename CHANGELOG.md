@@ -29,6 +29,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
 - Replaced hand-rolled filesystem I/O with full Zim API integration (`build_notebook`, index views, `NotebookState`)
 - Renamed internal package from `zim/` to `notebook_client/` to avoid clashing with Zim's top-level `zim` module
+- GPL-2.0-only license: copyright header on `LICENSE`, v2-only wording (aligned with Zim), SPDX metadata and `license-files` in `pyproject.toml`
 
 ### Documentation
 
@@ -36,6 +37,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README rsync install instructions for local and remote deployment
 - README rsync excludes for Python cache and dev artifacts (aligned with `scripts/build-plugin.sh`)
 - README Hermes CLI and dashboard install via `hermes plugins install` (GitHub subdirectory path)
+- README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
 [2026.06.13.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.0

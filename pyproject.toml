@@ -8,7 +8,8 @@ dynamic = ["version"]
 description = "Hermes Agent plugin for Zim Desktop Wiki notebooks (Zim API backend)"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "GPL-2.0-only" }
+license = "GPL-2.0-only"
+license-files = ["LICENSE"]
 
 [project.optional-dependencies]
 test = ["pytest>=7"]

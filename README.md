@@ -158,3 +158,7 @@ hermes_zim_wiki_plugin/
 ```
 
 See [Build a Hermes Plugin](https://hermes-agent.nousresearch.com/docs/guides/build-a-hermes-plugin).
+
+## License
+
+[GNU General Public License v2.0](LICENSE) (GPL-2.0-only), the same license as [Zim Desktop Wiki](https://zim-wiki.org/).

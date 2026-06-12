@@ -39,6 +39,33 @@ Bundled skill: `zim-wiki:zim-wiki` (load with `skill_view`).
 export ZIM_NOTEBOOK_PATH=/path/to/your/notebook
 ```
 
+### Hermes CLI or dashboard (recommended)
+
+Install from GitHub with Hermes built-in plugin manager. The plugin lives in the `hermes_zim_wiki_plugin/` subdirectory of this repo, so include that path in the identifier.
+
+**CLI:**
+
+```bash
+hermes plugins install MarkoPaasila/hermes-zim-wiki-plugin/hermes_zim_wiki_plugin --enable
+```
+
+Hermes clones the repo, prompts for `ZIM_NOTEBOOK_PATH` if it is not already set (saved to `~/.hermes/.env`), and enables the plugin. Update later with:
+
+```bash
+hermes plugins update zim-wiki
+```
+
+**Dashboard:**
+
+1. Start the web UI: `hermes dashboard` (requires `pip install 'hermes-agent[web]'`).
+2. Open **Plugins** in the sidebar.
+3. Under **Install from GitHub / Git URL**, paste:
+   `MarkoPaasila/hermes-zim-wiki-plugin/hermes_zim_wiki_plugin`
+4. Leave **Enable after install** on and click **Install**.
+5. If the dashboard reports missing env vars, set `ZIM_NOTEBOOK_PATH` on the **Keys** page.
+
+See [Hermes plugins](https://hermes-agent.nousresearch.com/docs/user-guide/features/plugins) for the full plugin manager reference.
+
 ### Symlink (development)
 
 ```bash

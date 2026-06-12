@@ -23,6 +23,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - Calendar versioning scheme (`YYYY.MM.DD.N`) and `hermes_zim_wiki_plugin/_version.py` as canonical version
 - Integration tests (pytest) and version consistency checks
 - GPL-2.0 license
+- `scripts/build-plugin.sh` — build installable packages (pip wheel/sdist and directory tarball for `~/.hermes/plugins/`)
 
 ### Changed
 
@@ -33,6 +34,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
 - README with prerequisites (system Zim install, `ZIM_NOTEBOOK_PATH`), install paths, and tool overview
 - README rsync install instructions for local and remote deployment
+- README Hermes CLI and dashboard install via `hermes plugins install` (GitHub subdirectory path)
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
 [2026.06.13.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.0

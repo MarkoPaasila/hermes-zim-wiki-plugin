@@ -75,15 +75,21 @@ hermes plugins enable zim-wiki
 
 ### Rsync (local)
 
-Copy the plugin into your Hermes plugins directory (useful when you want a real copy instead of a symlink):
+Copy the plugin into your Hermes plugins directory (useful when you want a real copy instead of a symlink). Sync only the `hermes_zim_wiki_plugin/` tree — not repo docs, tests, or build output — and skip Python cache files:
 
 ```bash
 mkdir -p ~/.hermes/plugins/zim-wiki
-rsync -av --delete hermes_zim_wiki_plugin/ ~/.hermes/plugins/zim-wiki/
+rsync -av --delete \
+  --exclude '__pycache__/' \
+  --exclude '*.py[cod]' \
+  --exclude '.pytest_cache/' \
+  --exclude '.mypy_cache/' \
+  --exclude '.ruff_cache/' \
+  hermes_zim_wiki_plugin/ ~/.hermes/plugins/zim-wiki/
 hermes plugins enable zim-wiki
 ```
 
-Re-run the `rsync` command after pulling updates. The trailing `/` on the source path copies the *contents* of `hermes_zim_wiki_plugin/` into `zim-wiki/` (where `plugin.yaml` lives at the top level).
+Re-run the `rsync` command after pulling updates. The trailing `/` on the source path copies the *contents* of `hermes_zim_wiki_plugin/` into `zim-wiki/` (where `plugin.yaml` lives at the top level). The same excludes are used in [`scripts/build-plugin.sh`](scripts/build-plugin.sh) when building the directory tarball.
 
 ### Rsync (remote)
 
@@ -92,7 +98,13 @@ Deploy to another machine over SSH (Hermes and Zim must already be installed the
 ```bash
 REMOTE=user@host   # adjust
 ssh "$REMOTE" 'mkdir -p ~/.hermes/plugins/zim-wiki'
-rsync -av --delete hermes_zim_wiki_plugin/ "$REMOTE:~/.hermes/plugins/zim-wiki/"
+rsync -av --delete \
+  --exclude '__pycache__/' \
+  --exclude '*.py[cod]' \
+  --exclude '.pytest_cache/' \
+  --exclude '.mypy_cache/' \
+  --exclude '.ruff_cache/' \
+  hermes_zim_wiki_plugin/ "$REMOTE:~/.hermes/plugins/zim-wiki/"
 ssh "$REMOTE" 'hermes plugins enable zim-wiki'
 ```
 

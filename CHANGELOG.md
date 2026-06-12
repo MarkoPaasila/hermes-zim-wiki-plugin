@@ -34,6 +34,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
 - README with prerequisites (system Zim install, `ZIM_NOTEBOOK_PATH`), install paths, and tool overview
 - README rsync install instructions for local and remote deployment
+- README rsync excludes for Python cache and dev artifacts (aligned with `scripts/build-plugin.sh`)
 - README Hermes CLI and dashboard install via `hermes plugins install` (GitHub subdirectory path)
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 

@@ -1,6 +1,97 @@
-"""Notebook search via Zim Query / SearchSelection API."""
+"""Notebook search via Zim Query / SearchSelection API and optional fuzzy matching."""
 
-from .session import NotebookError, get_notebook, path_to_dict, run_zim_op
+from __future__ import annotations
+
+import re
+
+from .session import NotebookError, get_notebook, path_to_dict, resolve_path, run_zim_op
+
+_STRUCTURED_KEYWORDS = re.compile(
+    r"\b(content|name|namespace|section|contentorname|links|linksfrom|linksto|tag)\s*:",
+    re.I,
+)
+_TAG_IN_QUERY = re.compile(r"(?:^|\s)@\w+", re.U)
+
+_VALID_MODES = frozenset({"exact", "fuzzy", "auto"})
+_VALID_SCOPES = frozenset({"names", "content", "both"})
+
+
+def _import_fuzz():
+    try:
+        from rapidfuzz import fuzz
+    except ImportError as exc:
+        raise NotebookError(
+            "rapidfuzz is required for fuzzy search; install hermes-zim-wiki-plugin with dependencies"
+        ) from exc
+    return fuzz
+
+
+def _is_structured_query(query: str) -> bool:
+    if _STRUCTURED_KEYWORDS.search(query):
+        return True
+    return bool(_TAG_IN_QUERY.search(query))
+
+
+def _validate_mode(mode: str) -> str:
+    normalized = (mode or "auto").strip().lower()
+    if normalized not in _VALID_MODES:
+        raise NotebookError(f"Invalid search mode: {mode!r} (expected exact, fuzzy, or auto)")
+    return normalized
+
+
+def _validate_scope(scope: str) -> str:
+    normalized = (scope or "both").strip().lower()
+    if normalized not in _VALID_SCOPES:
+        raise NotebookError(f"Invalid search scope: {scope!r} (expected names, content, or both)")
+    return normalized
+
+
+def _validate_threshold(threshold: int) -> int:
+    try:
+        value = int(threshold)
+    except (TypeError, ValueError) as exc:
+        raise NotebookError("threshold must be an integer between 0 and 100") from exc
+    if not 0 <= value <= 100:
+        raise NotebookError("threshold must be an integer between 0 and 100")
+    return value
+
+
+def _wiki_body(page) -> str:
+    lines = page.dump("wiki")
+    return "\n".join(lines) if lines else ""
+
+
+def _score_text(fuzz, query: str, text: str) -> float:
+    q = query.lower()
+    t = text.lower()
+    return max(
+        fuzz.partial_ratio(q, t),
+        fuzz.token_set_ratio(q, t),
+    )
+
+
+def _score_name(fuzz, query: str, name: str, basename: str) -> float:
+    return max(
+        _score_text(fuzz, query, name),
+        _score_text(fuzz, query, basename),
+        _score_text(fuzz, query, name.replace(":", " ")),
+    )
+
+
+def _match_kind(name_score: float, content_score: float, scope: str, threshold: int) -> str | None:
+    name_hit = name_score >= threshold
+    content_hit = content_score >= threshold
+    if scope == "names":
+        return "name" if name_hit else None
+    if scope == "content":
+        return "content" if content_hit else None
+    if name_hit and content_hit:
+        return "both"
+    if name_hit:
+        return "name"
+    if content_hit:
+        return "content"
+    return None
 
 
 def _snippet_for_path(notebook, path, query: str) -> str | None:
@@ -10,7 +101,7 @@ def _snippet_for_path(notebook, path, query: str) -> str | None:
         return None
     try:
         page = notebook.get_page(path)
-        body = "\n".join(page.dump("wiki") or [])
+        body = _wiki_body(page)
         idx = body.lower().find(needle)
         if idx < 0:
             return None
@@ -21,10 +112,28 @@ def _snippet_for_path(notebook, path, query: str) -> str | None:
         return None
 
 
-def _search_pages(query: str, limit: int = 20) -> list[dict]:
-    if not query.strip():
-        raise NotebookError("Search query is empty")
+def _fuzzy_snippet(body: str, query: str, window: int = 80) -> str | None:
+    fuzz = _import_fuzz()
+    flat = body.replace("\n", " ")
+    if not flat.strip():
+        return None
+    if len(flat) <= window:
+        return flat.strip()
 
+    best_score = -1.0
+    best_start = 0
+    step = max(1, window // 4)
+    q = query.lower()
+    for start in range(0, len(flat) - window + 1, step):
+        chunk = flat[start : start + window]
+        score = fuzz.partial_ratio(q, chunk.lower())
+        if score > best_score:
+            best_score = score
+            best_start = start
+    return flat[best_start : best_start + window].strip()
+
+
+def _exact_search_pages(query: str, limit: int) -> list[dict]:
     from zim.search import Query, SearchSelection
 
     notebook = get_notebook()
@@ -52,5 +161,126 @@ def _search_pages(query: str, limit: int = 20) -> list[dict]:
     return results
 
 
-def search_pages(query: str, limit: int = 20) -> list[dict]:
-    return run_zim_op("search_pages", _search_pages, query=query, limit=limit)
+def _fuzzy_search_pages(
+    query: str,
+    limit: int,
+    threshold: int,
+    scope: str,
+    prefix: str,
+) -> list[dict]:
+    if _is_structured_query(query):
+        raise NotebookError(
+            "Fuzzy search supports plain text only; use mode=exact for structured queries "
+            "(Content:, Tag:, LinksTo:, etc.)"
+        )
+
+    fuzz = _import_fuzz()
+    notebook = get_notebook()
+    start = None
+    if prefix.strip():
+        start = resolve_path(prefix.strip())
+
+    candidates: list[tuple[float, dict]] = []
+    for record in notebook.pages.walk(start):
+        name_score = 0.0
+        content_score = 0.0
+
+        if scope in ("names", "both"):
+            name_score = _score_name(fuzz, query, record.name, record.basename)
+
+        body = ""
+        if scope in ("content", "both") and record.hascontent:
+            try:
+                page = notebook.get_page(record)
+                body = _wiki_body(page)
+                if body:
+                    content_score = _score_text(fuzz, query, body)
+            except Exception:
+                content_score = 0.0
+
+        if scope == "names":
+            total_score = name_score
+        elif scope == "content":
+            total_score = content_score
+        else:
+            total_score = max(name_score, content_score)
+
+        match = _match_kind(name_score, content_score, scope, threshold)
+        if match is None:
+            continue
+
+        entry = {
+            **path_to_dict(record),
+            "score": round(total_score, 2),
+            "match": match,
+        }
+        if match in ("content", "both") and body:
+            snippet = _fuzzy_snippet(body, query)
+            if snippet:
+                entry["snippet"] = snippet
+        elif match == "name":
+            entry["snippet"] = record.name
+
+        candidates.append((total_score, entry))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return [entry for _, entry in candidates[: max(1, limit)]]
+
+
+def _search_pages(
+    query: str,
+    limit: int = 20,
+    mode: str = "auto",
+    threshold: int = 85,
+    scope: str = "both",
+    prefix: str = "",
+) -> dict:
+    if not query.strip():
+        raise NotebookError("Search query is empty")
+
+    mode_requested = _validate_mode(mode)
+    scope = _validate_scope(scope)
+    threshold = _validate_threshold(threshold)
+
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError) as exc:
+        raise NotebookError("limit must be an integer") from exc
+    if limit < 1:
+        raise NotebookError("limit must be at least 1")
+
+    if mode_requested == "exact":
+        results = _exact_search_pages(query, limit)
+        return {"mode": "exact", "mode_requested": "exact", "results": results}
+
+    if mode_requested == "fuzzy":
+        results = _fuzzy_search_pages(query, limit, threshold, scope, prefix)
+        return {"mode": "fuzzy", "mode_requested": "fuzzy", "results": results}
+
+    exact_results = _exact_search_pages(query, limit)
+    if exact_results:
+        return {"mode": "exact", "mode_requested": "auto", "results": exact_results}
+
+    fuzzy_results = _fuzzy_search_pages(query, limit, threshold, scope, prefix)
+    return {"mode": "fuzzy", "mode_requested": "auto", "results": fuzzy_results}
+
+
+def search_pages(
+    query: str,
+    limit: int = 20,
+    *,
+    mode: str = "auto",
+    threshold: int = 85,
+    scope: str = "both",
+    prefix: str = "",
+) -> dict:
+    return run_zim_op(
+        "search_pages",
+        _search_pages,
+        query=query,
+        limit=limit,
+        mode=mode,
+        threshold=threshold,
+        scope=scope,
+        prefix=prefix,
+    )

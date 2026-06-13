@@ -34,13 +34,12 @@ The plugin resolves names via `notebook.pages.lookup_from_user_input()` — not 
 
 ## Search query examples
 
+Default search uses **mode=auto** (exact Zim search first, fuzzy typo fallback if empty).
+
 - Plain text: `meeting notes` (searches content and names)
-- `Content:python`
-- `Name:Home`
-- `Tag:todo` or `@todo` in query
-- `LinksTo:Home` (backlinks)
-- `LinksFrom:Home` (outbound)
-- `Content:api AND Tag:work`
+- Typo-tolerant plain text: `meating notes` (auto falls back to fuzzy when exact finds nothing)
+- Structured queries (use **mode=exact** for precision): `Content:python`, `Name:Home`, `Tag:todo`, `LinksTo:Home`, `LinksFrom:Home`, `Content:api AND Tag:work`
+- Fuzzy-only plain text: set `mode=fuzzy` with optional `scope` (`names`, `content`, `both`) and `threshold` (default 85)
 
 ## Wiki markup (common)
 

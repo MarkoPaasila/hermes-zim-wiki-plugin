@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-2.0-only"
 license-files = ["LICENSE"]
+dependencies = ["rapidfuzz>=3.0"]
 
 [project.optional-dependencies]
 test = ["pytest>=7"]

@@ -47,13 +47,31 @@ def zim_search(args: dict, **kwargs) -> str:
     if not query:
         return _error("No query specified")
     limit = args.get("limit", 20)
+    mode = args.get("mode") or "auto"
+    threshold = args.get("threshold", 85)
+    scope = args.get("scope") or "both"
+    prefix = args.get("prefix") or ""
     try:
-        results = search_pages(query, limit=int(limit))
-        return json.dumps({"query": query, "count": len(results), "results": results})
+        payload = search_pages(
+            query,
+            limit=int(limit),
+            mode=str(mode),
+            threshold=int(threshold),
+            scope=str(scope),
+            prefix=str(prefix),
+        )
+        results = payload["results"]
+        return json.dumps({
+            "query": query,
+            "mode": payload["mode"],
+            "mode_requested": payload["mode_requested"],
+            "count": len(results),
+            "results": results,
+        })
     except NotebookError as exc:
         return _error(str(exc))
     except (TypeError, ValueError):
-        return _error("limit must be an integer")
+        return _error("limit and threshold must be integers")
     except Exception as exc:
         return _error(f"Search failed: {exc}")
 

@@ -43,21 +43,49 @@ ZIM_READ_PAGE = {
 ZIM_SEARCH = {
     "name": "zim_search",
     "description": (
-        "Search Zim wiki pages using Zim's query language. Plain text searches "
-        "content and names. Keywords: Content:, Name:, Tag:, LinksFrom:, "
-        "LinksTo:, Section:. Operators: AND, OR, NOT (or -). Examples: "
-        "'meeting notes', 'Tag:todo', 'LinksTo:Home', 'Content:python AND Tag:work'."
+        "Search Zim wiki pages. Default mode is auto: exact Zim search first, "
+        "then fuzzy typo-tolerant fallback if no results. Use mode=exact for "
+        "structured Zim queries only (Content:, Name:, Tag:, LinksFrom:, "
+        "LinksTo:, Section:, AND/OR/NOT). Use mode=fuzzy for plain-text typo "
+        "search over page names and content."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Zim search query string",
+                "description": "Search query (plain text or Zim query language for mode=exact/auto)",
             },
             "limit": {
                 "type": "integer",
                 "description": "Maximum number of results to return (default 20)",
+            },
+            "mode": {
+                "type": "string",
+                "enum": ["auto", "exact", "fuzzy"],
+                "description": (
+                    "Search strategy: auto (default, exact then fuzzy), exact "
+                    "(Zim query language only), or fuzzy (plain-text typo search)"
+                ),
+            },
+            "threshold": {
+                "type": "integer",
+                "description": "Minimum fuzzy match score 0-100 (default 85; ignored for exact mode)",
+            },
+            "scope": {
+                "type": "string",
+                "enum": ["names", "content", "both"],
+                "description": (
+                    "Fuzzy match scope (default both; ignored for exact mode): "
+                    "page names, page content, or both"
+                ),
+            },
+            "prefix": {
+                "type": "string",
+                "description": (
+                    "Optional namespace prefix to limit fuzzy scan "
+                    "(e.g. 'Notes' or 'Projects:Dev'; ignored for exact mode)"
+                ),
             },
         },
         "required": ["query"],

@@ -43,15 +43,83 @@ def test_write_roundtrip(notebook_env):
 
 
 def test_search_content(notebook_env):
-    results = search_pages("world")
-    names = {r["name"] for r in results}
+    payload = search_pages("world")
+    assert payload["mode"] == "exact"
+    assert payload["mode_requested"] == "auto"
+    names = {r["name"] for r in payload["results"]}
     assert "Home" in names
 
 
 def test_search_tag(notebook_env):
-    results = search_pages("Tag:subtag")
-    names = {r["name"] for r in results}
+    payload = search_pages("Tag:subtag")
+    assert payload["mode"] == "exact"
+    names = {r["name"] for r in payload["results"]}
     assert "Home:Sub" in names
+
+
+def test_fuzzy_name_typo(notebook_env):
+    payload = search_pages("Hom", mode="fuzzy")
+    assert payload["mode"] == "fuzzy"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" in names
+
+
+def test_fuzzy_content_typo(notebook_env):
+    payload = search_pages("worl", mode="fuzzy", scope="content")
+    assert payload["mode"] == "fuzzy"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" in names
+
+
+def test_fuzzy_auto_fallback(notebook_env):
+    payload = search_pages("Hme", mode="auto")
+    assert payload["mode"] == "fuzzy"
+    assert payload["mode_requested"] == "auto"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" in names
+
+
+def test_auto_default_mode(notebook_env):
+    payload = search_pages("Hme")
+    assert payload["mode"] == "fuzzy"
+    assert payload["mode_requested"] == "auto"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" in names
+
+
+def test_auto_structured_query(notebook_env):
+    payload = search_pages("Tag:subtag")
+    assert payload["mode"] == "exact"
+    assert payload["mode_requested"] == "auto"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home:Sub" in names
+
+
+def test_fuzzy_respects_threshold(notebook_env):
+    payload = search_pages("Hme", mode="fuzzy", threshold=95)
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" not in names
+
+
+def test_fuzzy_rejects_structured_query(notebook_env):
+    import pytest
+
+    from hermes_zim_wiki_plugin.notebook_client.session import NotebookError
+
+    with pytest.raises(NotebookError, match="plain text only"):
+        search_pages("Tag:subtag", mode="fuzzy")
+
+
+def test_exact_mode_explicit(notebook_env):
+    payload = search_pages("world", mode="exact")
+    assert payload["mode"] == "exact"
+    assert payload["mode_requested"] == "exact"
+    names = {r["name"] for r in payload["results"]}
+    assert "Home" in names
+
+    tag_payload = search_pages("Tag:subtag", mode="exact")
+    tag_names = {r["name"] for r in tag_payload["results"]}
+    assert "Home:Sub" in tag_names
 
 
 def test_get_links(notebook_env):

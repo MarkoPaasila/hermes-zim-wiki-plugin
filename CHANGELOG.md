@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.14.2] - 2026-06-14
+
+### Changed
+
+- Expanded `CONTEXT.md` domain glossary: lookup vs search, direct page read, basename collision, dead lookup terms, lookup failure, tag exclusion, whole-notebook lookup
+- Cleared superseded `TODO.md` item (lookup redesign complete)
+
 ## [2026.06.14.1] - 2026-06-14
 
 ### Changed
@@ -92,6 +99,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.14.2]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.2
 [2026.06.14.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.1
 [2026.06.14.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.0
 [2026.06.13.4]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.4

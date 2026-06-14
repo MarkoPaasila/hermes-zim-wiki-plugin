@@ -14,7 +14,7 @@ _TAG_IN_QUERY = re.compile(r"(?:^|\s)@\w+", re.U)
 
 _VALID_MODES = frozenset({"exact", "fuzzy", "auto"})
 _VALID_SCOPES = frozenset({"names", "content", "both"})
-_LOOKUP_THRESHOLD = 95
+_DEFAULT_LOOKUP_THRESHOLD = 95
 _SEPARATOR_RE = re.compile(r"[\s_\-.]+")
 
 
@@ -115,12 +115,8 @@ def _score_identifier(fuzz, query: str, target: str) -> float:
     return best
 
 
-def _score_page_name(fuzz, query: str, name: str, basename: str) -> float:
-    return max(
-        _score_identifier(fuzz, query, name),
-        _score_identifier(fuzz, query, basename),
-        _score_identifier(fuzz, query, name.replace(":", " ")),
-    )
+def _score_basename(fuzz, term: str, basename: str) -> float:
+    return _score_identifier(fuzz, term, basename)
 
 
 def _validate_terms(terms: list[str]) -> list[str]:
@@ -144,164 +140,71 @@ def _try_exact_name_lookup(notebook, term: str) -> str | None:
     return None
 
 
-def _build_tag_index(notebook) -> dict[str, set[str]]:
-    index: dict[str, set[str]] = {}
-    for tag in notebook.tags.list_all_tags():
-        tag_name = tag.name.lstrip("@")
-        try:
-            pages = notebook.tags.list_pages(tag_name)
-        except Exception:
-            continue
-        for page_rec in pages:
-            for variant in _identifier_variants(tag_name):
-                index.setdefault(variant, set()).add(page_rec.name)
-    return index
-
-
-def _lookup_candidate_rank(
-    *,
-    exact: bool,
-    score: float,
-    match: str,
-    name: str,
-) -> tuple:
-    return (
-        1 if exact else 0,
-        score,
-        1 if match == "name" else 0,
-        -len(name),
-    )
-
-
-def _find_page(terms: list[str], prefix: str = "") -> dict:
+def _find_page(terms: list[str], threshold: int = _DEFAULT_LOOKUP_THRESHOLD) -> dict:
     from .pages import _read_page
 
     cleaned_terms = _validate_terms(terms)
+    threshold = _validate_threshold(threshold)
     notebook = get_notebook()
-    start = None
-    if prefix.strip():
-        start = resolve_path(prefix.strip())
 
-    best: dict | None = None
-    best_rank: tuple | None = None
+    hits: dict[str, dict] = {}
 
-    tag_index = _build_tag_index(notebook)
+    def record_hit(page_name: str, term: str, score: float, mode: str) -> None:
+        entry = hits.get(page_name)
+        if entry is None:
+            hits[page_name] = {
+                "matched_terms": {term},
+                "score": score,
+                "mode": mode,
+            }
+            return
+        entry["matched_terms"].add(term)
+        if score > entry["score"]:
+            entry["score"] = score
+        if mode == "exact":
+            entry["mode"] = "exact"
 
+    fuzzy_terms: list[str] = []
     for term in cleaned_terms:
         page_name = _try_exact_name_lookup(notebook, term)
         if page_name:
-            rank = _lookup_candidate_rank(exact=True, score=100.0, match="name", name=page_name)
-            if best_rank is None or rank > best_rank:
-                best_rank = rank
-                best = {
-                    "page_name": page_name,
-                    "matched_term": term,
-                    "match": "name",
-                    "score": 100.0,
-                    "mode": "exact",
-                }
-            continue
+            record_hit(page_name, term, 100.0, "exact")
+        else:
+            fuzzy_terms.append(term)
 
-        for variant in _identifier_variants(term):
-            for page_name in tag_index.get(variant, ()):
-                rank = _lookup_candidate_rank(exact=True, score=100.0, match="tag", name=page_name)
-                if best_rank is None or rank > best_rank:
-                    best_rank = rank
-                    best = {
-                        "page_name": page_name,
-                        "matched_term": term,
-                        "match": "tag",
-                        "score": 100.0,
-                        "mode": "exact",
-                    }
+    if fuzzy_terms:
+        fuzz = _import_fuzz()
+        for record in notebook.pages.walk():
+            for term in fuzzy_terms:
+                score = _score_basename(fuzz, term, record.basename)
+                if score >= threshold:
+                    record_hit(record.name, term, round(score, 2), "fuzzy")
 
-    if best is not None:
-        page_data = _read_page(best["page_name"])
-        return {
-            "terms": cleaned_terms,
-            "matched_term": best["matched_term"],
-            "match": best["match"],
-            "score": best["score"],
-            "mode": best["mode"],
-            **page_data,
-        }
-
-    fuzz = _import_fuzz()
-    fuzzy_candidates: list[tuple[tuple, dict]] = []
-
-    for record in notebook.pages.walk(start):
-        page_tags: list[str] = []
-        try:
-            page_tags = [tag.name.lstrip("@") for tag in notebook.tags.list_tags(record)]
-        except Exception:
-            page_tags = []
-
-        best_term_score = 0.0
-        best_term = cleaned_terms[0]
-        best_match = "name"
-
-        for term in cleaned_terms:
-            name_score = _score_page_name(fuzz, term, record.name, record.basename)
-            tag_score = 0.0
-            matched_tag = ""
-            for tag_name in page_tags:
-                score = _score_identifier(fuzz, term, tag_name)
-                if score > tag_score:
-                    tag_score = score
-                    matched_tag = tag_name
-
-            if name_score >= tag_score:
-                term_score = name_score
-                term_match = "name"
-            else:
-                term_score = tag_score
-                term_match = "tag"
-
-            if term_score > best_term_score:
-                best_term_score = term_score
-                best_term = term
-                best_match = term_match
-
-        if best_term_score < _LOOKUP_THRESHOLD:
-            continue
-
-        rank = _lookup_candidate_rank(
-            exact=False,
-            score=best_term_score,
-            match=best_match,
-            name=record.name,
-        )
-        fuzzy_candidates.append((
-            rank,
-            {
-                "page_name": record.name,
-                "matched_term": best_term,
-                "match": best_match,
-                "score": round(best_term_score, 2),
-                "mode": "fuzzy",
-            },
-        ))
-
-    if not fuzzy_candidates:
+    if not hits:
         raise NotebookError(
-            f"No page matched {cleaned_terms!r} by title or tag at threshold {_LOOKUP_THRESHOLD}"
+            f"No page matched {cleaned_terms!r} by basename at threshold {threshold}"
         )
 
-    fuzzy_candidates.sort(key=lambda item: item[0], reverse=True)
-    winner = fuzzy_candidates[0][1]
-    page_data = _read_page(winner["page_name"])
+    pages: list[dict] = []
+    for page_name in sorted(hits, key=lambda name: (-hits[name]["score"], name.lower())):
+        hit = hits[page_name]
+        pages.append({
+            **_read_page(page_name),
+            "matched_terms": sorted(hit["matched_terms"]),
+            "score": hit["score"],
+            "mode": hit["mode"],
+        })
+
     return {
+        "count": len(pages),
+        "pages": pages,
         "terms": cleaned_terms,
-        "matched_term": winner["matched_term"],
-        "match": winner["match"],
-        "score": winner["score"],
-        "mode": winner["mode"],
-        **page_data,
+        "threshold": threshold,
     }
 
 
-def find_page(terms: list[str], *, prefix: str = "") -> dict:
-    return run_zim_op("find_page", _find_page, terms=terms, prefix=prefix)
+def find_page(terms: list[str], *, threshold: int = _DEFAULT_LOOKUP_THRESHOLD) -> dict:
+    return run_zim_op("find_page", _find_page, terms=terms, threshold=threshold)
 
 
 def _match_kind(name_score: float, content_score: float, scope: str, threshold: int) -> str | None:

@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.14.1] - 2026-06-14
+
+### Changed
+
+- `zim_lookup_page` redesign: basename-only matching (no tags, no `prefix`), union semantics across terms, always returns `{ count, pages[], terms, threshold }`; configurable `threshold` (default 95). See [ADR-0001](docs/adr/0001-lookup-basename-only.md).
+- Domain glossary added in `CONTEXT.md`
+
 ## [2026.06.14.0] - 2026-06-14
 
 ### Added
@@ -85,6 +92,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.14.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.1
 [2026.06.14.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.0
 [2026.06.13.4]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.4
 [2026.06.13.3]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.3

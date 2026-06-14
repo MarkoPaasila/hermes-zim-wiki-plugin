@@ -81,11 +81,13 @@ def zim_lookup_page(args: dict, **kwargs) -> str:
     terms = args.get("terms")
     if not isinstance(terms, list):
         return _error("terms must be a list of strings")
-    prefix = args.get("prefix") or ""
+    threshold = args.get("threshold", 95)
     try:
-        return json.dumps(find_page(terms, prefix=str(prefix)))
+        return json.dumps(find_page(terms, threshold=int(threshold)))
     except NotebookError as exc:
         return _error(str(exc))
+    except (TypeError, ValueError):
+        return _error("threshold must be an integer")
     except Exception as exc:
         return _error(f"Lookup failed: {exc}")
 

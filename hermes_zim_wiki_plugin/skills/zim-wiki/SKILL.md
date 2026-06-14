@@ -20,7 +20,7 @@ Always use the `zim_*` tools for notebook I/O. Do **not** use generic `read_file
 |------|------|
 | Explore structure | `zim_list_pages` |
 | Read content (known page name) | `zim_read_page` |
-| Find and read one page by title/tag | `zim_lookup_page` |
+| Find and read page(s) by basename | `zim_lookup_page` |
 | Find notes (many results, content search) | `zim_search` |
 | Update existing page | `zim_write_page` |
 | Create new page | `zim_create_page` |
@@ -42,14 +42,17 @@ Default search uses **mode=auto** (exact Zim search first, fuzzy typo fallback i
 - Structured queries (use **mode=exact** for precision): `Content:python`, `Name:Home`, `Tag:todo`, `LinksTo:Home`, `LinksFrom:Home`, `Content:api AND Tag:work`
 - Fuzzy-only plain text: set `mode=fuzzy` with optional `scope` (`names`, `content`, `both`) and `threshold` (default 85)
 
-## Lookup one page (title or tag)
+## Lookup page(s) by basename
 
-Use `zim_lookup_page` when you know roughly which page you want and need its full body in one call:
+Use `zim_lookup_page` when you know roughly which page title you want and need full body content in one call:
 
 - Single term: `terms=["Home"]`
-- OR semantics: `terms=["meeting notes", "MeetingNotes"]` — matches if any term hits
-- Handles case, underscores, dashes, and spaces as equivalent (95% fuzzy threshold)
-- Matches page titles and tags only (not body content)
+- OR semantics: `terms=["Koiruusu", "Rosa canina"]` — returns every page whose basename matches any term
+- Dead terms are ignored; not found only when no term matches
+- Handles case, underscores, dashes, and spaces as equivalent (default threshold 95; override with `threshold`)
+- Matches page **basenames** only (leaf title, not namespace prefix); exact colon-notation paths also work (`terms=["Notes:Meeting"]`)
+- Does **not** match tags or body content — use `zim_list_tags` or `zim_search` for those
+- Response: `{ "count", "pages": [...], "terms", "threshold" }` — each page includes `matched_terms`, `score`, `mode`, and full body
 
 ## Wiki markup (common)
 

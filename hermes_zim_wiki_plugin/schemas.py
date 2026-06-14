@@ -95,9 +95,11 @@ ZIM_SEARCH = {
 ZIM_LOOKUP_PAGE = {
     "name": "zim_lookup_page",
     "description": (
-        "Find the best-matching Zim page by title or tag and return its full "
-        "wiki body in one call. Multiple terms use OR semantics. Fuzzy matching "
-        "at 95% handles case, underscores, dashes, and similar variants."
+        "Find Zim pages by basename and return their full wiki bodies in one call. "
+        "Multiple terms use OR semantics (union); terms with no match are ignored. "
+        "Fuzzy matching at configurable threshold (default 95) handles case and "
+        "separator variants on page basenames. Exact colon-notation paths also qualify. "
+        "Does not match tags or body content."
     ),
     "parameters": {
         "type": "object",
@@ -106,11 +108,11 @@ ZIM_LOOKUP_PAGE = {
                 "type": "array",
                 "items": {"type": "string"},
                 "minItems": 1,
-                "description": "Search terms; matches if ANY term hits a page title or tag",
+                "description": "Search terms; each is matched against page basenames (OR union)",
             },
-            "prefix": {
-                "type": "string",
-                "description": "Optional namespace prefix to limit search (e.g. 'Notes')",
+            "threshold": {
+                "type": "integer",
+                "description": "Minimum basename match score 0-100 (default 95)",
             },
         },
         "required": ["terms"],

@@ -1,5 +1,5 @@
 name: zim-wiki
-version: 2026.06.13.4
+version: 2026.06.14.0
 description: >-
   Non-LLM tools for querying, searching, reading, and correctly writing Zim
   Desktop Wiki notebooks via the Zim Python API
@@ -11,6 +11,7 @@ provides_tools:
   - zim_list_pages
   - zim_read_page
   - zim_search
+  - zim_lookup_page
   - zim_write_page
   - zim_get_links
   - zim_list_tags

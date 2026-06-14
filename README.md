@@ -2,7 +2,7 @@
 
 Hermes Agent plugin for reading and writing [Zim Desktop Wiki](https://zim-wiki.org/) notebooks via the **Zim Python API**.
 
-**Version:** `2026.06.13.4` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
+**Version:** `2026.06.14.0` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Goal
 
@@ -24,6 +24,7 @@ The plugin imports Zim's Python modules at runtime. Zim is licensed under **GPL-
 | `zim_list_pages` | List pages via Zim index (optional namespace prefix) |
 | `zim_read_page` | Read page wiki markup |
 | `zim_search` | Search pages (default `mode=auto`: exact Zim query, then fuzzy fallback; also `mode=exact` / `mode=fuzzy`, `threshold`, `scope`, `prefix`) |
+| `zim_lookup_page` | Find best page by title or tag (OR terms, 95% fuzzy) and return full body in one call |
 | `zim_write_page` | Replace body of an existing page |
 | `zim_get_links` | Forward, backward, or bidirectional links |
 | `zim_list_tags` | Tags on a page, pages with a tag, or all tags |

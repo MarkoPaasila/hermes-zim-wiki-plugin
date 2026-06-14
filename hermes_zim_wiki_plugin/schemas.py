@@ -92,6 +92,31 @@ ZIM_SEARCH = {
     },
 }
 
+ZIM_LOOKUP_PAGE = {
+    "name": "zim_lookup_page",
+    "description": (
+        "Find the best-matching Zim page by title or tag and return its full "
+        "wiki body in one call. Multiple terms use OR semantics. Fuzzy matching "
+        "at 95% handles case, underscores, dashes, and similar variants."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "terms": {
+                "type": "array",
+                "items": {"type": "string"},
+                "minItems": 1,
+                "description": "Search terms; matches if ANY term hits a page title or tag",
+            },
+            "prefix": {
+                "type": "string",
+                "description": "Optional namespace prefix to limit search (e.g. 'Notes')",
+            },
+        },
+        "required": ["terms"],
+    },
+}
+
 ZIM_WRITE_PAGE = {
     "name": "zim_write_page",
     "description": (

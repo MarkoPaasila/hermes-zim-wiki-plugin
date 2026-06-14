@@ -42,6 +42,7 @@ def register(ctx):
         ("zim_list_pages", schemas.ZIM_LIST_PAGES, tools.zim_list_pages),
         ("zim_read_page", schemas.ZIM_READ_PAGE, tools.zim_read_page),
         ("zim_search", schemas.ZIM_SEARCH, tools.zim_search),
+        ("zim_lookup_page", schemas.ZIM_LOOKUP_PAGE, tools.zim_lookup_page),
         ("zim_write_page", schemas.ZIM_WRITE_PAGE, tools.zim_write_page),
         ("zim_get_links", schemas.ZIM_GET_LINKS, tools.zim_get_links),
         ("zim_list_tags", schemas.ZIM_LIST_TAGS, tools.zim_list_tags),

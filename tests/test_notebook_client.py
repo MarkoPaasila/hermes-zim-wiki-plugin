@@ -2,6 +2,7 @@
 
 from hermes_zim_wiki_plugin.notebook_client import (
     create_page,
+    find_page,
     get_links,
     list_all_tags,
     list_pages,
@@ -153,3 +154,55 @@ def test_create_page(notebook_env):
 
     data = read_page("BrandNew")
     assert "Fresh page" in data["body"]
+
+
+def test_lookup_page_by_title(notebook_env):
+    data = find_page(["Home"])
+    assert data["name"] == "Home"
+    assert data["match"] == "name"
+    assert data["mode"] == "exact"
+    assert "world" in data["body"]
+
+
+def test_lookup_page_case_variant(notebook_env):
+    data = find_page(["home"])
+    assert data["name"] == "Home"
+    assert data["score"] == 100
+
+
+def test_lookup_page_separator_variants(notebook_env):
+    created = create_page("Notes:My_Page", "Separator test page\n")
+    page_name = created["name"]
+
+    for term in ("my page", "my-page", "my_page", "MY PAGE"):
+        data = find_page([term])
+        assert data["name"] == page_name, f"term {term!r} failed"
+        assert "Separator test page" in data["body"]
+
+
+def test_lookup_page_by_tag(notebook_env):
+    data = find_page(["subtag"])
+    assert data["name"] == "Home:Sub"
+    assert data["match"] == "tag"
+    assert "Sub page body" in data["body"]
+
+
+def test_lookup_page_or_semantics(notebook_env):
+    data = find_page(["zzznonexistent", "Home"])
+    assert data["name"] == "Home"
+    assert data["matched_term"] == "Home"
+
+
+def test_lookup_page_threshold(notebook_env):
+    import pytest
+
+    from hermes_zim_wiki_plugin.notebook_client.session import NotebookError
+
+    with pytest.raises(NotebookError, match="No page matched"):
+        find_page(["Hme"])
+
+
+def test_lookup_page_full_body(notebook_env):
+    data = find_page(["Home"])
+    assert data["body"]
+    assert data["exists"] is True

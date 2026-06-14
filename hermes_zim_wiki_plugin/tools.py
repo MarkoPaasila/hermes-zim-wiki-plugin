@@ -5,6 +5,7 @@ import json
 from .notebook_client import (
     NotebookError,
     create_page,
+    find_page,
     get_links,
     list_all_tags,
     list_pages,
@@ -74,6 +75,19 @@ def zim_search(args: dict, **kwargs) -> str:
         return _error("limit and threshold must be integers")
     except Exception as exc:
         return _error(f"Search failed: {exc}")
+
+
+def zim_lookup_page(args: dict, **kwargs) -> str:
+    terms = args.get("terms")
+    if not isinstance(terms, list):
+        return _error("terms must be a list of strings")
+    prefix = args.get("prefix") or ""
+    try:
+        return json.dumps(find_page(terms, prefix=str(prefix)))
+    except NotebookError as exc:
+        return _error(str(exc))
+    except Exception as exc:
+        return _error(f"Lookup failed: {exc}")
 
 
 def zim_write_page(args: dict, **kwargs) -> str:

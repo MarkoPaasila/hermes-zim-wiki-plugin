@@ -5,6 +5,14 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.14.0] - 2026-06-14
+
+### Added
+
+- `zim_lookup_page` one-shot tool: find the best-matching page by title or tag and return its full wiki body in one call
+- OR semantics for multiple search terms; 95% fuzzy threshold with separator/case normalization (underscores, dashes, spaces, colons)
+- Integration tests for lookup by title, tag, separator variants, OR terms, and threshold enforcement
+
 ## [2026.06.13.4] - 2026-06-13
 
 ### Added
@@ -77,6 +85,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.14.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.0
 [2026.06.13.4]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.4
 [2026.06.13.3]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.3
 [2026.06.13.2]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.13.2

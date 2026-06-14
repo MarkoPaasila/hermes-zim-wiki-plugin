@@ -19,8 +19,9 @@ Always use the `zim_*` tools for notebook I/O. Do **not** use generic `read_file
 | Goal | Tool |
 |------|------|
 | Explore structure | `zim_list_pages` |
-| Read content | `zim_read_page` |
-| Find notes | `zim_search` |
+| Read content (known page name) | `zim_read_page` |
+| Find and read one page by title/tag | `zim_lookup_page` |
+| Find notes (many results, content search) | `zim_search` |
 | Update existing page | `zim_write_page` |
 | Create new page | `zim_create_page` |
 | Outbound / inbound links | `zim_get_links` |
@@ -40,6 +41,15 @@ Default search uses **mode=auto** (exact Zim search first, fuzzy typo fallback i
 - Typo-tolerant plain text: `meating notes` (auto falls back to fuzzy when exact finds nothing)
 - Structured queries (use **mode=exact** for precision): `Content:python`, `Name:Home`, `Tag:todo`, `LinksTo:Home`, `LinksFrom:Home`, `Content:api AND Tag:work`
 - Fuzzy-only plain text: set `mode=fuzzy` with optional `scope` (`names`, `content`, `both`) and `threshold` (default 85)
+
+## Lookup one page (title or tag)
+
+Use `zim_lookup_page` when you know roughly which page you want and need its full body in one call:
+
+- Single term: `terms=["Home"]`
+- OR semantics: `terms=["meeting notes", "MeetingNotes"]` — matches if any term hits
+- Handles case, underscores, dashes, and spaces as equivalent (95% fuzzy threshold)
+- Matches page titles and tags only (not body content)
 
 ## Wiki markup (common)
 

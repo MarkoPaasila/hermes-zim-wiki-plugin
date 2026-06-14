@@ -14,6 +14,8 @@ _TAG_IN_QUERY = re.compile(r"(?:^|\s)@\w+", re.U)
 
 _VALID_MODES = frozenset({"exact", "fuzzy", "auto"})
 _VALID_SCOPES = frozenset({"names", "content", "both"})
+_LOOKUP_THRESHOLD = 95
+_SEPARATOR_RE = re.compile(r"[\s_\-.]+")
 
 
 def _import_fuzz():
@@ -76,6 +78,230 @@ def _score_name(fuzz, query: str, name: str, basename: str) -> float:
         _score_text(fuzz, query, basename),
         _score_text(fuzz, query, name.replace(":", " ")),
     )
+
+
+def _normalize_identifier(text: str) -> str:
+    normalized = _SEPARATOR_RE.sub(" ", text.lower().strip())
+    return " ".join(normalized.split())
+
+
+def _compact_identifier(text: str) -> str:
+    return re.sub(r"[\s_\-.:/]+", "", text.lower())
+
+
+def _identifier_variants(text: str) -> set[str]:
+    stripped = text.strip()
+    if not stripped:
+        return set()
+    variants = {
+        stripped.lower(),
+        _normalize_identifier(stripped),
+        _compact_identifier(stripped),
+        stripped.lower().replace(":", " "),
+        _normalize_identifier(stripped.replace(":", " ")),
+    }
+    return {variant for variant in variants if variant}
+
+
+def _score_identifier(fuzz, query: str, target: str) -> float:
+    best = 0.0
+    for q in _identifier_variants(query):
+        for t in _identifier_variants(target):
+            best = max(
+                best,
+                fuzz.partial_ratio(q, t),
+                fuzz.token_set_ratio(q, t),
+            )
+    return best
+
+
+def _score_page_name(fuzz, query: str, name: str, basename: str) -> float:
+    return max(
+        _score_identifier(fuzz, query, name),
+        _score_identifier(fuzz, query, basename),
+        _score_identifier(fuzz, query, name.replace(":", " ")),
+    )
+
+
+def _validate_terms(terms: list[str]) -> list[str]:
+    if not isinstance(terms, list):
+        raise NotebookError("terms must be a list of strings")
+    cleaned = [term.strip() for term in terms if isinstance(term, str) and term.strip()]
+    if not cleaned:
+        raise NotebookError("At least one non-empty search term is required")
+    return cleaned
+
+
+def _try_exact_name_lookup(notebook, term: str) -> str | None:
+    for variant in _identifier_variants(term):
+        try:
+            path = notebook.pages.lookup_from_user_input(variant)
+            page = notebook.get_page(path)
+            if page.exists():
+                return path.name
+        except (ValueError, Exception):
+            continue
+    return None
+
+
+def _build_tag_index(notebook) -> dict[str, set[str]]:
+    index: dict[str, set[str]] = {}
+    for tag in notebook.tags.list_all_tags():
+        tag_name = tag.name.lstrip("@")
+        try:
+            pages = notebook.tags.list_pages(tag_name)
+        except Exception:
+            continue
+        for page_rec in pages:
+            for variant in _identifier_variants(tag_name):
+                index.setdefault(variant, set()).add(page_rec.name)
+    return index
+
+
+def _lookup_candidate_rank(
+    *,
+    exact: bool,
+    score: float,
+    match: str,
+    name: str,
+) -> tuple:
+    return (
+        1 if exact else 0,
+        score,
+        1 if match == "name" else 0,
+        -len(name),
+    )
+
+
+def _find_page(terms: list[str], prefix: str = "") -> dict:
+    from .pages import _read_page
+
+    cleaned_terms = _validate_terms(terms)
+    notebook = get_notebook()
+    start = None
+    if prefix.strip():
+        start = resolve_path(prefix.strip())
+
+    best: dict | None = None
+    best_rank: tuple | None = None
+
+    tag_index = _build_tag_index(notebook)
+
+    for term in cleaned_terms:
+        page_name = _try_exact_name_lookup(notebook, term)
+        if page_name:
+            rank = _lookup_candidate_rank(exact=True, score=100.0, match="name", name=page_name)
+            if best_rank is None or rank > best_rank:
+                best_rank = rank
+                best = {
+                    "page_name": page_name,
+                    "matched_term": term,
+                    "match": "name",
+                    "score": 100.0,
+                    "mode": "exact",
+                }
+            continue
+
+        for variant in _identifier_variants(term):
+            for page_name in tag_index.get(variant, ()):
+                rank = _lookup_candidate_rank(exact=True, score=100.0, match="tag", name=page_name)
+                if best_rank is None or rank > best_rank:
+                    best_rank = rank
+                    best = {
+                        "page_name": page_name,
+                        "matched_term": term,
+                        "match": "tag",
+                        "score": 100.0,
+                        "mode": "exact",
+                    }
+
+    if best is not None:
+        page_data = _read_page(best["page_name"])
+        return {
+            "terms": cleaned_terms,
+            "matched_term": best["matched_term"],
+            "match": best["match"],
+            "score": best["score"],
+            "mode": best["mode"],
+            **page_data,
+        }
+
+    fuzz = _import_fuzz()
+    fuzzy_candidates: list[tuple[tuple, dict]] = []
+
+    for record in notebook.pages.walk(start):
+        page_tags: list[str] = []
+        try:
+            page_tags = [tag.name.lstrip("@") for tag in notebook.tags.list_tags(record)]
+        except Exception:
+            page_tags = []
+
+        best_term_score = 0.0
+        best_term = cleaned_terms[0]
+        best_match = "name"
+
+        for term in cleaned_terms:
+            name_score = _score_page_name(fuzz, term, record.name, record.basename)
+            tag_score = 0.0
+            matched_tag = ""
+            for tag_name in page_tags:
+                score = _score_identifier(fuzz, term, tag_name)
+                if score > tag_score:
+                    tag_score = score
+                    matched_tag = tag_name
+
+            if name_score >= tag_score:
+                term_score = name_score
+                term_match = "name"
+            else:
+                term_score = tag_score
+                term_match = "tag"
+
+            if term_score > best_term_score:
+                best_term_score = term_score
+                best_term = term
+                best_match = term_match
+
+        if best_term_score < _LOOKUP_THRESHOLD:
+            continue
+
+        rank = _lookup_candidate_rank(
+            exact=False,
+            score=best_term_score,
+            match=best_match,
+            name=record.name,
+        )
+        fuzzy_candidates.append((
+            rank,
+            {
+                "page_name": record.name,
+                "matched_term": best_term,
+                "match": best_match,
+                "score": round(best_term_score, 2),
+                "mode": "fuzzy",
+            },
+        ))
+
+    if not fuzzy_candidates:
+        raise NotebookError(
+            f"No page matched {cleaned_terms!r} by title or tag at threshold {_LOOKUP_THRESHOLD}"
+        )
+
+    fuzzy_candidates.sort(key=lambda item: item[0], reverse=True)
+    winner = fuzzy_candidates[0][1]
+    page_data = _read_page(winner["page_name"])
+    return {
+        "terms": cleaned_terms,
+        "matched_term": winner["matched_term"],
+        "match": winner["match"],
+        "score": winner["score"],
+        "mode": winner["mode"],
+        **page_data,
+    }
+
+
+def find_page(terms: list[str], *, prefix: str = "") -> dict:
+    return run_zim_op("find_page", _find_page, terms=terms, prefix=prefix)
 
 
 def _match_kind(name_score: float, content_score: float, scope: str, threshold: int) -> str | None:

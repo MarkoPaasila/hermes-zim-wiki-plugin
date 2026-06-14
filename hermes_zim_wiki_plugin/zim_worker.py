@@ -22,6 +22,7 @@ def _dispatch(op: str, args: dict):
         "write_page_body": pages._write_page_body,
         "create_page": pages._create_page,
         "search_pages": search._search_pages,
+        "find_page": search._find_page,
         "get_links": links._get_links,
         "list_tags_on_page": tags._list_tags_on_page,
         "list_all_tags": tags._list_all_tags,

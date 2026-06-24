@@ -2,7 +2,7 @@
 
 Hermes Agent plugin for reading and writing [Zim Desktop Wiki](https://zim-wiki.org/) notebooks via the **Zim Python API**.
 
-**Version:** `2026.06.24.0` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
+**Version:** `2026.06.24.1` — see [VERSIONING.md](VERSIONING.md) for the release scheme. Release history: [CHANGELOG.md](CHANGELOG.md).
 
 ## Goal
 
@@ -145,10 +145,15 @@ pytest
 
 ## Layout
 
+Hermes directory plugins expect `plugin.yaml`, `__init__.py`, `schemas.py`, `tools.py`, and `skills/` at the plugin root. This repo also ships a pip package (`hermes_zim_wiki_plugin/`) for entry-point discovery; root-level files re-export or mirror the package so both git checkout and flat `~/.hermes/plugins/` installs work.
+
 ```
 plugin.yaml               # Hermes manifest (repo root — git install)
 __init__.py               # register(ctx) shim for git install
-hermes_zim_wiki_plugin/   # implementation package
+schemas.py                # re-exports (flat directory layout)
+tools.py                  # re-exports (flat directory layout)
+skills/zim-wiki/          # bundled skill (git / symlink install)
+hermes_zim_wiki_plugin/   # implementation package (pip + rsync flat deploy)
 ├── __init__.py           # register(ctx)
 ├── schemas.py
 ├── tools.py
@@ -158,7 +163,7 @@ hermes_zim_wiki_plugin/   # implementation package
 │   ├── search.py
 │   ├── links.py
 │   └── tags.py
-└── skills/zim-wiki/
+└── skills/zim-wiki/      # bundled skill (pip / rsync flat deploy)
 ```
 
 See [Build a Hermes Plugin](https://hermes-agent.nousresearch.com/docs/guides/build-a-hermes-plugin).

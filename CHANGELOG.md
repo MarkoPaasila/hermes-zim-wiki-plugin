@@ -5,6 +5,14 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.24.1] - 2026-06-24
+
+### Changed
+
+- Align plugin layout with Hermes directory conventions: root `schemas.py`, `tools.py`, and `skills/zim-wiki/` for git/symlink installs; `_skills_dir()` prefers plugin-root skills over package skills
+- README layout section documents dual git-checkout and flat deploy structure
+- Add `tests/test_plugin_layout.py` to verify root re-exports and bundled skill parity
+
 ## [2026.06.24.0] - 2026-06-24
 
 ### Fixed
@@ -106,6 +114,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.24.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.24.1
 [2026.06.24.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.24.0
 [2026.06.14.2]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.2
 [2026.06.14.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.1

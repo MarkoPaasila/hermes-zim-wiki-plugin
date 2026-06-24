@@ -5,6 +5,13 @@ All notable changes to this project are documented here. Newest entries appear f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 
+## [2026.06.24.0] - 2026-06-24
+
+### Fixed
+
+- `zim_search` exact mode on Zim with Python 3.14: use `PageSearch` API when legacy `Query` / `SearchSelection` are unavailable
+- `zim_lookup_page` basename resolution without `rapidfuzz` in the Zim worker Python: exact basename matching before fuzzy pass, with `difflib` fallback for fuzzy scoring
+
 ## [2026.06.14.2] - 2026-06-14
 
 ### Changed
@@ -99,6 +106,7 @@ Version numbers follow [VERSIONING.md](VERSIONING.md) (`YYYY.MM.DD.N`).
 - README License section linking to `LICENSE`
 - [VERSIONING.md](VERSIONING.md) describing release numbering and where to bump versions
 
+[2026.06.24.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.24.0
 [2026.06.14.2]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.2
 [2026.06.14.1]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.1
 [2026.06.14.0]: https://github.com/MarkoPaasila/hermes-zim-wiki-plugin/releases/tag/2026.06.14.0

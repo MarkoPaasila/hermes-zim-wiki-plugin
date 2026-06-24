@@ -1,7 +1,8 @@
-"""Notebook search via Zim Query / SearchSelection API and optional fuzzy matching."""
+"""Notebook search via Zim PageSearch API (with legacy fallback) and optional fuzzy matching."""
 
 from __future__ import annotations
 
+import difflib
 import re
 
 from .session import NotebookError, get_notebook, path_to_dict, resolve_path, run_zim_op
@@ -18,13 +19,57 @@ _DEFAULT_LOOKUP_THRESHOLD = 95
 _SEPARATOR_RE = re.compile(r"[\s_\-.]+")
 
 
+class _DifflibFuzz:
+    """stdlib fallback when rapidfuzz is not installed in the Zim Python environment."""
+
+    @staticmethod
+    def _ratio(left: str, right: str) -> float:
+        if not left or not right:
+            return 0.0
+        return difflib.SequenceMatcher(None, left, right).ratio() * 100
+
+    @classmethod
+    def partial_ratio(cls, left: str, right: str) -> float:
+        if left == right:
+            return 100.0
+        if len(left) > len(right):
+            left, right = right, left
+        if not left:
+            return 0.0
+        if left in right:
+            return 100.0
+        best = 0.0
+        window = len(left)
+        for start in range(len(right) - window + 1):
+            best = max(best, cls._ratio(left, right[start : start + window]))
+        return best
+
+    @classmethod
+    def token_set_ratio(cls, left: str, right: str) -> float:
+        left_tokens = left.split()
+        right_tokens = right.split()
+        if not left_tokens or not right_tokens:
+            return cls._ratio(left, right)
+        left_set = set(left_tokens)
+        right_set = set(right_tokens)
+        common = " ".join(sorted(left_set & right_set))
+        left_only = " ".join(sorted(left_set - right_set))
+        right_only = " ".join(sorted(right_set - left_set))
+        scores = [cls._ratio(left, right)]
+        if common:
+            if left_only:
+                scores.append(cls._ratio(common + " " + left_only, common))
+            if right_only:
+                scores.append(cls._ratio(common + " " + right_only, common))
+            scores.append(cls._ratio(common, common))
+        return max(scores)
+
+
 def _import_fuzz():
     try:
         from rapidfuzz import fuzz
-    except ImportError as exc:
-        raise NotebookError(
-            "rapidfuzz is required for fuzzy search; install hermes-zim-wiki-plugin with dependencies"
-        ) from exc
+    except ImportError:
+        return _DifflibFuzz()
     return fuzz
 
 
@@ -140,6 +185,18 @@ def _try_exact_name_lookup(notebook, term: str) -> str | None:
     return None
 
 
+def _try_exact_basename_lookup(notebook, term: str) -> list[str]:
+    term_variants = _identifier_variants(term)
+    if not term_variants:
+        return []
+
+    matches: list[str] = []
+    for record in notebook.pages.walk():
+        if term_variants & _identifier_variants(record.basename):
+            matches.append(record.name)
+    return matches
+
+
 def _find_page(terms: list[str], threshold: int = _DEFAULT_LOOKUP_THRESHOLD) -> dict:
     from .pages import _read_page
 
@@ -169,6 +226,12 @@ def _find_page(terms: list[str], threshold: int = _DEFAULT_LOOKUP_THRESHOLD) -> 
         page_name = _try_exact_name_lookup(notebook, term)
         if page_name:
             record_hit(page_name, term, 100.0, "exact")
+            continue
+
+        basename_matches = _try_exact_basename_lookup(notebook, term)
+        if basename_matches:
+            for page_name in basename_matches:
+                record_hit(page_name, term, 100.0, "exact")
         else:
             fuzzy_terms.append(term)
 
@@ -262,10 +325,37 @@ def _fuzzy_snippet(body: str, query: str, window: int = 80) -> str | None:
     return flat[best_start : best_start + window].strip()
 
 
-def _exact_search_pages(query: str, limit: int) -> list[dict]:
+def _exact_search_pages_modern(notebook, query: str, limit: int) -> list[dict]:
+    from zim.search import PageSearch
+
+    page_search = PageSearch(notebook)
+    try:
+        parsed = page_search.parse_page_search_query(query.strip())
+    except Exception as exc:
+        raise NotebookError(f"Invalid search query: {exc}") from exc
+
+    results: list[dict] = []
+    for item in page_search.search_pages(parsed):
+        path = item.path
+        entry = {
+            **path_to_dict(path),
+            "score": item.search_score,
+        }
+        if item.search_snippets:
+            entry["snippet"] = " ... ".join(item.search_snippets)
+        else:
+            snippet = _snippet_for_path(notebook, path, query)
+            if snippet:
+                entry["snippet"] = snippet
+        results.append(entry)
+
+    results.sort(key=lambda entry: entry["score"], reverse=True)
+    return results[: max(1, limit)]
+
+
+def _exact_search_pages_legacy(notebook, query: str, limit: int) -> list[dict]:
     from zim.search import Query, SearchSelection
 
-    notebook = get_notebook()
     selection = SearchSelection(notebook)
     try:
         selection.search(Query(query.strip()))
@@ -288,6 +378,20 @@ def _exact_search_pages(query: str, limit: int) -> list[dict]:
             entry["snippet"] = snippet
         results.append(entry)
     return results
+
+
+def _exact_search_pages(query: str, limit: int) -> list[dict]:
+    notebook = get_notebook()
+    try:
+        from zim.search import PageSearch  # noqa: F401
+    except ImportError as exc:
+        raise NotebookError(f"Zim search API is unavailable: {exc}") from exc
+
+    try:
+        from zim.search import Query  # noqa: F401
+        return _exact_search_pages_legacy(notebook, query, limit)
+    except ImportError:
+        return _exact_search_pages_modern(notebook, query, limit)
 
 
 def _fuzzy_search_pages(
